@@ -282,7 +282,7 @@ main,
   margin-top: var(--s4);
   font-size: var(--fs-title);
   font-weight: 500;
-  line-height: 1.2;
+  line-height: 1;
   color: var(--mark);
   white-space: nowrap;
   pointer-events: none;
@@ -290,9 +290,9 @@ main,
 }
 
 /* Large, beside a line of the headline (top set by the script) */
-.anatomy-name.is-big {
+.anatomy-name.is-big,
+.anatomy-name.is-inline {
   margin-top: 0;
-  line-height: 1;
 }
 
 .anatomy-name.is-on { opacity: 1; }

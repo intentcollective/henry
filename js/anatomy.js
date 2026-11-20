@@ -68,7 +68,7 @@ const DESCENT = 310;  // the font's descent; a letter's box ends this far below 
   // The part's name. Where the headline has room, it is set
   // large beside the second line (or the third), flush right
   // on that line's baseline. Where it doesn't, as on phones,
-  // it sits small on its own line under the headline.
+  // it is set small, flush right on the last line's baseline.
   const name = document.createElement("span");
   name.className = "anatomy-name";
   name.setAttribute("aria-hidden", "true");
@@ -106,9 +106,20 @@ const DESCENT = 310;  // the font's descent; a letter's box ends this far below 
       name.style.fontSize = fs + "px";
       name.style.top = base - ASCENT * fs + "px";
     } else {
+      // Small, on the baseline of the headline's last line,
+      // flush right. If that line has no room, under it.
       name.classList.remove("is-big");
       name.style.fontSize = "";
       name.style.top = "";
+      name.classList.remove("is-inline");
+      const chars = headline.querySelectorAll(".ch");
+      const last = chars[chars.length - 1].getBoundingClientRect();
+      const size = parseFloat(getComputedStyle(name).fontSize);
+      if (box.right - last.right >= name.offsetWidth + size) {
+        const base = last.bottom - DESCENT * fs / 1000 - box.top;
+        name.style.top = base - ASCENT * size + "px";
+        name.classList.add("is-inline");
+      }
     }
   }
 
