@@ -225,7 +225,7 @@ main,
   font-size: var(--fs-hero);
   font-weight: 500;
   line-height: 1;
-  letter-spacing: -0.045em;
+  letter-spacing: -0.02em;
 }
 
 .hero-line {
