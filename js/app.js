@@ -203,8 +203,9 @@ function setupModal() {
   const content = document.getElementById("modal-content");
 
   closeBtn.addEventListener("click", closeModal);
+  window.addEventListener("popstate", hideModal);
   modal.addEventListener("click", (e) => {
-    if (e.target === modal) closeModal();
+    if (e.target === modal || e.target.classList.contains("modal-bar")) closeModal();
   });
 
   document.addEventListener("keydown", (e) => {
@@ -273,11 +274,27 @@ function openModal(item) {
   content.appendChild(desc);
 
   modal.hidden = false;
+  modal.scrollTop = 0;
   document.body.style.overflow = "hidden";
+
+  // Give the open project its own history step, so the browser's
+  // back button closes the project instead of leaving the site.
+  history.pushState({ modal: true }, "");
 }
 
+// Close button, Escape and backdrop all go through history, so the
+// extra step added in openModal() is used up and back works normally.
 function closeModal() {
+  if (history.state && history.state.modal) {
+    history.back(); // triggers popstate -> hideModal()
+  } else {
+    hideModal();
+  }
+}
+
+function hideModal() {
   const modal = document.getElementById("modal");
+  if (modal.hidden) return;
   modal.hidden = true;
   document.getElementById("modal-content").innerHTML = "";
   carouselSlides = [];
