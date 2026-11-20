@@ -1,22 +1,83 @@
 /* ============================================
-   Tokens
+   style.css
+   The whole look of the site lives here. It follows
+   the same system as the Gromit portfolio: one column
+   grid, a 4px spacing scale and six type roles.
+   ============================================ */
+
+/* DM Sans is hosted here, not by Google, because Google's
+   copy drops the stylistic sets. ss01 gives the traditional
+   teardrop quotes, apostrophe and comma. */
+@font-face {
+  font-family: 'DM Sans';
+  src: url('../fonts/DMSans-Roman.woff2') format('woff2');
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'DM Sans';
+  src: url('../fonts/DMSans-Italic.woff2') format('woff2');
+  font-weight: 400 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* ============================================
+   1. Tokens
    ============================================ */
 :root {
+  /* Color */
   --bg: #000000;
   --fg: #f2f2f0;
   --muted: #8a8a86;
   --edge: #2a2a2a;
-  /* Same grid as the Gromit portfolio. Gutters only space
-     things, so they stay narrow. The width is capped so the
-     800x600 thumbnails never show larger than they were made. */
-  --text-w: 1140px;
-  --margin: 48px;
-  --gutter: 12px;
-  --row-gap: 48px;
-  --wrap: calc(var(--text-w) + 2 * var(--margin));
+
+  /* Type. Six roles, each with one job.
+       label    13px  footer, small marks
+       body     16px  nav, card titles, running text
+       large    18px  modal description
+       title    20px  modal title
+       display        the name
+       hero           the headline only */
   --font: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+  --fs-label: 13px;
+  --fs-body: 16px;
+  --fs-large: 18px;
+  --fs-title: 20px;
+  --fs-display: clamp(1.5rem, 2.6vw, 2rem);
+  --fs-hero: clamp(2.75rem, 7vw, 5.75rem);
+
+  /* Space moves in steps of 4px. */
+  --s1: 4px;  --s2: 8px;  --s3: 12px; --s4: 16px; --s5: 24px;
+  --s6: 32px; --s7: 48px; --s8: 64px; --s9: 96px;
+
+  /* The grid. Gutters only space things, so they stay
+     narrow. The width is capped so the 800x600 thumbnails
+     never show larger than they were made. */
+  --text-w: 1140px;
+  --margin: var(--s7);
+  --gutter: var(--s3);
+  --row-gap: var(--s7);
+  --wrap: calc(var(--text-w) + 2 * var(--margin));
+  --cols: 3;
 }
 
+/* Tablets, two across */
+@media (max-width: 1023px) {
+  :root { --cols: 2; }
+}
+/* Phones, one across with tighter edges */
+@media (max-width: 640px) {
+  :root { --cols: 1; --margin: var(--s5); --gutter: var(--s2); --row-gap: var(--s6); }
+}
+@media (max-width: 374px) {
+  :root { --margin: var(--s4); }
+}
+
+/* ============================================
+   2. Base
+   ============================================ */
 * { box-sizing: border-box; }
 
 html, body {
@@ -28,9 +89,16 @@ html, body {
 
 body {
   font-family: var(--font);
+  font-size: var(--fs-body);
+  font-feature-settings: "ss01" 1;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
-  line-height: 1.5;
+  display: flex;               /* keeps the footer at the bottom */
+  flex-direction: column;
+  min-height: 100vh;
 }
+
+main { flex: 1; }
 
 a {
   color: var(--fg);
@@ -38,13 +106,16 @@ a {
 }
 
 button {
-  font-family: var(--font);
+  font: inherit;
   background: none;
   border: none;
   color: var(--fg);
   cursor: pointer;
   padding: 0;
 }
+
+p { text-wrap: pretty; }
+h1 { text-wrap: balance; }
 
 :focus-visible {
   outline: 1px solid var(--fg);
@@ -53,88 +124,80 @@ button {
 
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
+  .hero-line > span { transform: none !important; }
 }
 
-/* ============================================
-   Header
-   ============================================ */
+/* Every band of the page shares one width and one edge. */
 .site-header,
+.hero,
 main,
 .site-footer {
   width: 100%;
   max-width: var(--wrap);
   margin: 0 auto;
+  padding-left: var(--margin);
+  padding-right: var(--margin);
 }
 
-/* The header sits on the same three columns as the work, so
-   the menu starts exactly at the third column's left edge. */
+/* ============================================
+   3. Header
+   Sits on the same columns as the work, so the
+   menu starts at the last column's left edge.
+   ============================================ */
 .site-header {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
   column-gap: var(--gutter);
-  row-gap: 0.75rem;
+  row-gap: var(--s2);
   align-items: baseline;
-  padding: var(--margin) var(--margin) calc(var(--margin) * 0.75);
+  padding-top: var(--s5);
+  padding-bottom: var(--s5);
 }
 
 .header-left {
-  grid-column: 1 / span 2;
+  grid-column: 1 / -2;
   min-width: 0;
 }
 
 .header-right {
-  grid-column: 3;
+  grid-column: -2 / -1;
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  gap: 1.75rem;
+  gap: var(--s5);
   flex-wrap: wrap;
 }
 
 .name {
-  font-size: clamp(2rem, 5vw, 3.25rem);
-  font-weight: 700;
+  font-size: var(--fs-display);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
   margin: 0;
-  line-height: 1.05;
-}
-
-.manifesto {
-  margin: 0.5rem 0 0;
-  font-size: 0.95rem;
-  color: var(--muted);
-  font-weight: 400;
 }
 
 .main-nav {
   display: flex;
-  gap: 1.25rem;
+  gap: var(--s5);
 }
 
-.nav-link {
-  font-size: 0.95rem;
+.nav-link,
+.contact-link {
+  font-size: var(--fs-body);
   color: var(--muted);
   transition: color 0.15s ease;
 }
 
 .nav-link.is-active,
-.nav-link:hover {
+.nav-link:hover,
+.contact-link:hover {
   color: var(--fg);
 }
 
 .contact-row {
   display: flex;
-  align-items: center;
-  gap: 0.85rem;
-}
-
-.contact-link {
-  color: var(--muted);
-  font-size: 0.95rem;
-  transition: color 0.15s ease;
-}
-
-.contact-link:hover {
-  color: var(--fg);
+  align-items: baseline;
+  gap: var(--s3);
 }
 
 .contact-link.linkedin {
@@ -142,53 +205,70 @@ main,
   letter-spacing: -0.02em;
 }
 
-/* ============================================
-   Grid
-   ============================================ */
-main {
-  padding: 0 var(--margin) var(--margin);
-}
-
-.grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  column-gap: var(--gutter);
-  row-gap: var(--row-gap);
-}
-
-/* Tablets, two across */
-@media (max-width: 1023px) {
-  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .site-header { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .header-left { grid-column: 1; }
-  .header-right { grid-column: 2; }
-}
-
-/* Phones, one across, tighter edges and gutter */
 @media (max-width: 640px) {
-  :root { --margin: 24px; --gutter: 8px; --row-gap: 32px; }
-  .grid { grid-template-columns: minmax(0, 1fr); }
-  .site-header { grid-template-columns: minmax(0, 1fr); }
   .header-left, .header-right { grid-column: 1; }
   .header-right { justify-content: flex-start; }
 }
 
-@media (max-width: 374px) {
-  :root { --margin: 16px; }
+/* ============================================
+   4. Hero
+   Each line sits in a box with overflow hidden,
+   and the text inside slides up into view.
+   ============================================ */
+.hero {
+  padding-top: var(--s8);
+  padding-bottom: var(--s8);
+}
+
+.hero-headline {
+  margin: 0;
+  font-size: var(--fs-hero);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.045em;
+}
+
+.hero-line {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.06em;
+}
+
+.hero-line > span {
+  display: inline-block;
+  transform: translateY(105%);
+  animation: rise 0.9s cubic-bezier(0.2, 0.7, 0.1, 1) forwards;
+  animation-delay: calc(var(--i) * 0.1s + 0.1s);
+}
+
+@keyframes rise { to { transform: translateY(0); } }
+
+@media (max-width: 640px) {
+  .hero { padding-top: var(--s7); padding-bottom: var(--s7); }
+}
+
+/* ============================================
+   5. Grid of work
+   ============================================ */
+main {
+  padding-bottom: var(--s9);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+  column-gap: var(--gutter);
+  row-gap: var(--row-gap);
 }
 
 .grid-empty {
   grid-column: 1 / -1;
+  margin: 0;
   color: var(--muted);
-  font-size: 0.95rem;
 }
 
 .work-card {
-  cursor: pointer;
-  border: none;
-  background: none;
   text-align: left;
-  padding: 0;
   width: 100%;
 }
 
@@ -201,13 +281,14 @@ main {
 }
 
 .work-title {
-  margin: 0.65rem 0 0.15rem;
-  font-size: 0.95rem;
+  margin: var(--s3) 0 0;
+  font-size: var(--fs-body);
   font-weight: 500;
+  line-height: 1.4;
 }
 
 /* ============================================
-   Modal
+   6. Modal
    ============================================ */
 .modal {
   position: fixed;
@@ -234,33 +315,30 @@ main {
   z-index: 6;
   display: flex;
   justify-content: flex-end;
-  padding-top: 1rem;
+  padding-top: var(--s4);
   background: rgba(0, 0, 0, 0.96);
 }
 
 .modal-close {
   font-size: 2rem;
   line-height: 1;
-  color: var(--fg);
-  padding: 0.25rem 0 0.5rem 0.75rem;
+  padding: var(--s1) 0 var(--s2) var(--s3);
   transition: opacity 0.15s ease;
 }
 
-.modal-close:hover {
-  opacity: 0.6;
-}
+.modal-close:hover { opacity: 0.6; }
 
 .modal-content img {
   width: 100%;
   display: block;
-  margin-bottom: 1rem;
+  margin-bottom: var(--s4);
 }
 
 .modal-content .video-embed {
   position: relative;
   width: 100%;
   padding-top: 56.25%;
-  margin-bottom: 1rem;
+  margin-bottom: var(--s4);
 }
 
 .modal-content .video-embed iframe {
@@ -271,9 +349,7 @@ main {
   border: none;
 }
 
-.carousel-wrap {
-  position: relative;
-}
+.carousel-wrap { position: relative; }
 
 .modal-arrow {
   position: absolute;
@@ -281,49 +357,43 @@ main {
   transform: translateY(-50%);
   font-size: 1.75rem;
   line-height: 1;
-  color: var(--fg);
   z-index: 5;
-  padding: 0.5rem 0.75rem;
+  padding: var(--s2) var(--s3);
   background: rgba(0, 0, 0, 0.5);
   transition: opacity 0.15s ease;
 }
 
-.modal-arrow:hover {
-  opacity: 0.6;
-}
-
-.modal-arrow-prev {
-  left: 0.5rem;
-}
-
-.modal-arrow-next {
-  right: 0.5rem;
-}
+.modal-arrow:hover { opacity: 0.6; }
+.modal-arrow-prev { left: var(--s2); }
+.modal-arrow-next { right: var(--s2); }
 
 .modal-title {
-  font-size: 1.4rem;
+  font-size: var(--fs-title);
   font-weight: 700;
-  margin: 1rem 0 0.5rem;
+  line-height: 1.3;
+  margin: var(--s4) 0 var(--s2);
 }
 
 .modal-description {
-  font-size: 0.95rem;
+  margin: 0;
+  font-size: var(--fs-large);
+  line-height: 1.55;
   color: var(--muted);
   max-width: 65ch;
   white-space: pre-wrap;
 }
 
 /* ============================================
-   Footer
+   7. Footer
    ============================================ */
 .site-footer {
-  padding: 0 var(--margin) var(--margin);
-  font-size: 0.8rem;
+  padding-bottom: var(--s6);
+  font-size: var(--fs-label);
   color: var(--muted);
 }
 
 .site-footer p {
   margin: 0;
-  padding-top: 1rem;
+  padding-top: var(--s4);
   border-top: 1px solid var(--edge);
 }
