@@ -61,7 +61,7 @@ const DESCENT = 310;  // the font's descent; a letter's box ends this far below 
   const svg = document.createElementNS(NS, "svg");
   svg.setAttribute("class", "anatomy");
   svg.setAttribute("aria-hidden", "true");
-  svg.innerHTML = '<circle class="ring" r="12"></circle>';
+  svg.innerHTML = '<circle class="ring" r="8"></circle>';
   headline.appendChild(svg);
   const ring = svg.querySelector(".ring");
 
