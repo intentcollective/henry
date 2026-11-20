@@ -226,7 +226,7 @@ main,
   font-size: var(--fs-hero);
   font-weight: 500;
   line-height: 1;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;   /* the display cut is already spaced for this size */
 }
 
 .hero-line {
@@ -280,7 +280,7 @@ main,
   right: 0;
   line-height: 1;
   font-weight: 500;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
   color: var(--mark);
   white-space: nowrap;
   pointer-events: none;
