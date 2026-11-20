@@ -2,8 +2,8 @@
    anatomy.js
    An easter egg. Over the headline the cursor becomes
    a red ring, and the part of the letter under it is
-   named in red on a line below, the way a type
-   specimen labels anatomy.
+   named in red, the way a type specimen labels
+   anatomy.
 
    Each letter below lists its parts as
    [name, x, y, size] in the font's own units
@@ -65,12 +65,52 @@ const DESCENT = 310;  // the font's descent; a letter's box ends this far below 
   headline.appendChild(svg);
   const ring = svg.querySelector(".ring");
 
-  // The part's name, on its own line under the headline,
-  // flush right with the margin
+  // The part's name. Where the headline has room, it is set
+  // large beside the second line (or the third), flush right
+  // on that line's baseline. Where it doesn't, as on phones,
+  // it sits small on its own line under the headline.
   const name = document.createElement("span");
   name.className = "anatomy-name";
   name.setAttribute("aria-hidden", "true");
   headline.appendChild(name);
+
+  const lines = [...headline.querySelectorAll(".hero-line")];
+  const LONGEST = "undershoot";  // if this fits, every name fits
+  const ASCENT = 0.841;          // baseline from the top of a line-height 1 box
+
+  // Find the line with room for the longest name at full size
+  function bigLine(fs, box) {
+    name.textContent = LONGEST;
+    name.classList.add("is-big");
+    name.style.fontSize = fs + "px";
+    const needed = name.offsetWidth + 0.3 * fs;   // plus a word space
+    for (const line of [lines[1], lines[2]]) {
+      if (!line) continue;
+      const chars = line.querySelectorAll(".ch");
+      const lastChar = chars[chars.length - 1];
+      const first = chars[0].getBoundingClientRect();
+      const last = lastChar.getBoundingClientRect();
+      const oneRow = Math.abs(first.top - last.top) < 1;   // the line hasn't wrapped
+      if (oneRow && box.right - last.right >= needed) return lastChar;
+    }
+    return null;
+  }
+
+  function place(text) {
+    const fs = parseFloat(getComputedStyle(headline).fontSize);
+    const box = headline.getBoundingClientRect();
+    const anchor = bigLine(fs, box);
+    name.textContent = text;
+    if (anchor) {
+      const base = anchor.getBoundingClientRect().bottom - DESCENT * fs / 1000 - box.top;
+      name.style.fontSize = fs + "px";
+      name.style.top = base - ASCENT * fs + "px";
+    } else {
+      name.classList.remove("is-big");
+      name.style.fontSize = "";
+      name.style.top = "";
+    }
+  }
 
   function partAt(e) {
     const ch = e.target.closest ? e.target.closest(".ch") : null;
@@ -88,9 +128,12 @@ const DESCENT = 310;  // the font's descent; a letter's box ends this far below 
     return best;
   }
 
+  let shown = null;
+
   function hide() {
     svg.classList.remove("is-on");
     name.classList.remove("is-on");
+    shown = null;
   }
 
   function show(e) {
@@ -98,7 +141,8 @@ const DESCENT = 310;  // the font's descent; a letter's box ends this far below 
     ring.setAttribute("cx", e.clientX - box.left);
     ring.setAttribute("cy", e.clientY - box.top);
     svg.classList.add("is-on");
-    name.textContent = partAt(e);
+    const part = partAt(e);
+    if (part !== shown) { shown = part; place(part); }
     name.classList.toggle("is-on", !!name.textContent);
   }
 
