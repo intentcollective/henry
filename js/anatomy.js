@@ -2,8 +2,8 @@
    anatomy.js
    An easter egg. Over the headline the cursor becomes
    a red ring, and the part of the letter under it is
-   named in large red type at the end of a line, the
-   way a type specimen labels anatomy.
+   named in red on a line below, the way a type
+   specimen labels anatomy.
 
    Each letter below lists its parts as
    [name, x, y, size] in the font's own units
@@ -65,16 +65,12 @@ const DESCENT = 310;  // the font's descent; a letter's box ends this far below 
   headline.appendChild(svg);
   const ring = svg.querySelector(".ring");
 
-  // The part's name, set large in the space after a line,
-  // flush right and sitting on that line's baseline
+  // The part's name, on its own line under the headline,
+  // flush right with the margin
   const name = document.createElement("span");
   name.className = "anatomy-name";
   name.setAttribute("aria-hidden", "true");
   headline.appendChild(name);
-
-  const lines = [...headline.querySelectorAll(".hero-line")];
-  const PREFER = [1, 2];   // second line first, then the third
-  const ASCENT = 0.841;    // baseline from the top of a line-height 1 box
 
   function partAt(e) {
     const ch = e.target.closest ? e.target.closest(".ch") : null;
@@ -92,38 +88,6 @@ const DESCENT = 310;  // the font's descent; a letter's box ends this far below 
     return best;
   }
 
-  function setName(text) {
-    if (text === name.textContent) return;
-    name.textContent = text;
-    if (!text) return;
-
-    const fs = parseFloat(getComputedStyle(headline).fontSize);
-    const box = headline.getBoundingClientRect();
-    name.style.fontSize = fs + "px";
-    const needed = name.offsetWidth + 0.3 * fs;  // a word space before it
-
-    // Use the preferred line with room; if none has room,
-    // the roomiest one, with the name made smaller to fit
-    let pick = null, room = -1;
-    for (const i of PREFER) {
-      const line = lines[i];
-      if (!line) continue;
-      const chars = line.querySelectorAll(".ch");
-      const last = chars[chars.length - 1];
-      const free = box.right - last.getBoundingClientRect().right;
-      if (free >= needed) { pick = last; room = free; break; }
-      if (free > room) { pick = last; room = free; }
-    }
-    if (!pick) return;
-
-    let size = fs;
-    if (needed > room) size = Math.max(fs * room / needed, 13);
-    name.style.fontSize = size + "px";
-
-    const base = pick.getBoundingClientRect().bottom - DESCENT * fs / 1000 - box.top;
-    name.style.top = base - ASCENT * size + "px";
-  }
-
   function hide() {
     svg.classList.remove("is-on");
     name.classList.remove("is-on");
@@ -134,7 +98,7 @@ const DESCENT = 310;  // the font's descent; a letter's box ends this far below 
     ring.setAttribute("cx", e.clientX - box.left);
     ring.setAttribute("cy", e.clientY - box.top);
     svg.classList.add("is-on");
-    setName(partAt(e));
+    name.textContent = partAt(e);
     name.classList.toggle("is-on", !!name.textContent);
   }
 
