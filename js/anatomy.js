@@ -55,72 +55,61 @@ const DESCENT = 310;  // the font's descent; a letter's box ends this far below 
       .join("");
   });
 
+  // Over the headline the cursor becomes a red ring,
+  // and the name of the part under it appears above
   const NS = "http://www.w3.org/2000/svg";
   const svg = document.createElementNS(NS, "svg");
   svg.setAttribute("class", "anatomy");
   svg.setAttribute("aria-hidden", "true");
+  svg.innerHTML = '<circle class="ring"></circle><text class="label" text-anchor="middle"></text>';
   headline.appendChild(svg);
+  const ring = svg.querySelector(".ring");
+  const label = svg.querySelector(".label");
+  ring.setAttribute("r", 12);
 
-  const el = (tag, attrs, text) => {
-    const n = document.createElementNS(NS, tag);
-    for (const k in attrs) n.setAttribute(k, attrs[k]);
-    if (text) n.textContent = text;
-    svg.appendChild(n);
-    return n;
-  };
+  const RING = 12;   // ring radius in pixels
+  const GAP = 10;    // space between the ring and the name
 
-  let current = "";
-
-  function clear() {
-    svg.innerHTML = "";
-    current = "";
+  function hide() {
+    svg.classList.remove("is-on");
   }
 
   function show(e) {
+    const box = headline.getBoundingClientRect();
+    const x = e.clientX - box.left;
+    const y = e.clientY - box.top;
+    ring.setAttribute("cx", x);
+    ring.setAttribute("cy", y);
+    svg.classList.add("is-on");
+
+    // Which part of which letter is under the pointer
     const ch = e.target.closest ? e.target.closest(".ch") : null;
     const parts = ch && ANATOMY[ch.textContent];
-    if (!parts) return clear();
+    let name = "";
+    if (parts) {
+      const u = parseFloat(getComputedStyle(headline).fontSize) / 1000;
+      const r = ch.getBoundingClientRect();
+      const px = (e.clientX - r.left) / u;
+      const py = (r.bottom - DESCENT * u - e.clientY) / u;
+      let bestD = Infinity;
+      parts.forEach((p) => {
+        const d = Math.hypot(px - p[1], py - p[2]) / p[3];
+        if (d < bestD) { bestD = d; name = p[0]; }
+      });
+    }
 
-    const fs = parseFloat(getComputedStyle(headline).fontSize);
-    const box = headline.getBoundingClientRect();
-    const r = ch.getBoundingClientRect();
-    const u = fs / 1000;                       // one font unit in pixels
-    const ox = r.left - box.left;              // letter origin
-    const base = r.bottom - box.top - DESCENT * u;
-
-    // Pointer position in font units
-    const px = (e.clientX - r.left) / u;
-    const py = (r.bottom - DESCENT * u - e.clientY) / u;
-
-    let best = null, bestD = Infinity;
-    parts.forEach((p) => {
-      const d = Math.hypot(px - p[1], py - p[2]) / p[3];
-      if (d < bestD) { bestD = d; best = p; }
-    });
-
-    const key = ch.dataset.i + best[0] + best[1];
-    if (key === current) return;
-    clear();
-    current = key;
-
-    // The part: a dotted ring and its name, above the ring
-    // for upper parts and below it for lower ones
-    const w = box.width;
-    const cx = ox + best[1] * u;
-    const cy = base - best[2] * u;
-    const rad = Math.max(best[3] * u, 10);
-    const up = best[2] >= 250;
-    el("circle", { class: "ring", cx, cy, r: rad });
-
-    const label = el("text", { class: "label", x: cx, y: up ? cy - rad - 6 : cy + rad + 15, "text-anchor": "middle" }, best[0]);
-    const b = label.getBBox();                 // keep the label inside the headline
-    if (b.x < 0) label.setAttribute("x", cx - b.x);
-    if (b.x + b.width > w) label.setAttribute("x", cx - (b.x + b.width - w));
+    label.textContent = name;
+    label.setAttribute("x", x);
+    label.setAttribute("y", y - RING - GAP);
+    if (name) {                                  // keep the name inside the headline
+      const b = label.getBBox();
+      if (b.x < 0) label.setAttribute("x", x - b.x);
+      else if (b.x + b.width > box.width) label.setAttribute("x", x - (b.x + b.width - box.width));
+    }
   }
 
-  headline.querySelectorAll(".ch").forEach((c, i) => (c.dataset.i = i));
   headline.addEventListener("pointermove", (e) => { if (e.pointerType === "mouse") show(e); });
   headline.addEventListener("pointerdown", show);
-  headline.addEventListener("pointerleave", (e) => { if (e.pointerType === "mouse") clear(); });
-  document.addEventListener("pointerdown", (e) => { if (!headline.contains(e.target)) clear(); });
+  headline.addEventListener("pointerleave", (e) => { if (e.pointerType === "mouse") hide(); });
+  document.addEventListener("pointerdown", (e) => { if (!headline.contains(e.target)) hide(); });
 })();

@@ -253,6 +253,10 @@ main,
    someone points and is gone when they leave. */
 .hero-headline { position: relative; }
 
+@media (hover: hover) {
+  .hero-headline { cursor: none; }   /* the ring is the cursor */
+}
+
 .anatomy {
   position: absolute;
   inset: 0;
@@ -260,7 +264,10 @@ main,
   height: 100%;
   overflow: visible;
   pointer-events: none;
+  opacity: 0;
 }
+
+.anatomy.is-on { opacity: 1; }
 
 .anatomy .ring {
   fill: none;
