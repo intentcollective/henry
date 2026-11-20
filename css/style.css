@@ -266,8 +266,6 @@ main,
   fill: none;
   stroke: var(--mark);
   stroke-width: 1.5;
-  stroke-dasharray: 0 5;
-  stroke-linecap: round;
 }
 
 .anatomy .label {
