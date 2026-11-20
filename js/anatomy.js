@@ -1,8 +1,9 @@
 /* ============================================
    anatomy.js
-   An easter egg. Point at a letter in the headline
-   and the part under the cursor is named, the way
-   a type specimen labels anatomy.
+   An easter egg. Over the headline the cursor becomes
+   a red ring, and the part of the letter under it is
+   named in large red type at the end of a line, the
+   way a type specimen labels anatomy.
 
    Each letter below lists its parts as
    [name, x, y, size] in the font's own units
@@ -55,57 +56,86 @@ const DESCENT = 310;  // the font's descent; a letter's box ends this far below 
       .join("");
   });
 
-  // Over the headline the cursor becomes a red ring,
-  // and the name of the part under it appears above
+  // Over the headline the cursor becomes a red ring
   const NS = "http://www.w3.org/2000/svg";
   const svg = document.createElementNS(NS, "svg");
   svg.setAttribute("class", "anatomy");
   svg.setAttribute("aria-hidden", "true");
-  svg.innerHTML = '<circle class="ring"></circle><text class="label" text-anchor="middle"></text>';
+  svg.innerHTML = '<circle class="ring" r="12"></circle>';
   headline.appendChild(svg);
   const ring = svg.querySelector(".ring");
-  const label = svg.querySelector(".label");
-  ring.setAttribute("r", 12);
 
-  const RING = 12;   // ring radius in pixels
-  const GAP = 10;    // space between the ring and the name
+  // The part's name, set large in the space after a line,
+  // flush right and sitting on that line's baseline
+  const name = document.createElement("span");
+  name.className = "anatomy-name";
+  name.setAttribute("aria-hidden", "true");
+  headline.appendChild(name);
+
+  const lines = [...headline.querySelectorAll(".hero-line")];
+  const PREFER = [1, 2];   // second line first, then the third
+  const ASCENT = 0.841;    // baseline from the top of a line-height 1 box
+
+  function partAt(e) {
+    const ch = e.target.closest ? e.target.closest(".ch") : null;
+    const parts = ch && ANATOMY[ch.textContent];
+    if (!parts) return "";
+    const u = parseFloat(getComputedStyle(headline).fontSize) / 1000;
+    const r = ch.getBoundingClientRect();
+    const px = (e.clientX - r.left) / u;
+    const py = (r.bottom - DESCENT * u - e.clientY) / u;
+    let best = "", bestD = Infinity;
+    parts.forEach((p) => {
+      const d = Math.hypot(px - p[1], py - p[2]) / p[3];
+      if (d < bestD) { bestD = d; best = p[0]; }
+    });
+    return best;
+  }
+
+  function setName(text) {
+    if (text === name.textContent) return;
+    name.textContent = text;
+    if (!text) return;
+
+    const fs = parseFloat(getComputedStyle(headline).fontSize);
+    const box = headline.getBoundingClientRect();
+    name.style.fontSize = fs + "px";
+    const needed = name.offsetWidth + 0.3 * fs;  // a word space before it
+
+    // Use the preferred line with room; if none has room,
+    // the roomiest one, with the name made smaller to fit
+    let pick = null, room = -1;
+    for (const i of PREFER) {
+      const line = lines[i];
+      if (!line) continue;
+      const chars = line.querySelectorAll(".ch");
+      const last = chars[chars.length - 1];
+      const free = box.right - last.getBoundingClientRect().right;
+      if (free >= needed) { pick = last; room = free; break; }
+      if (free > room) { pick = last; room = free; }
+    }
+    if (!pick) return;
+
+    let size = fs;
+    if (needed > room) size = Math.max(fs * room / needed, 13);
+    name.style.fontSize = size + "px";
+
+    const base = pick.getBoundingClientRect().bottom - DESCENT * fs / 1000 - box.top;
+    name.style.top = base - ASCENT * size + "px";
+  }
 
   function hide() {
     svg.classList.remove("is-on");
+    name.classList.remove("is-on");
   }
 
   function show(e) {
     const box = headline.getBoundingClientRect();
-    const x = e.clientX - box.left;
-    const y = e.clientY - box.top;
-    ring.setAttribute("cx", x);
-    ring.setAttribute("cy", y);
+    ring.setAttribute("cx", e.clientX - box.left);
+    ring.setAttribute("cy", e.clientY - box.top);
     svg.classList.add("is-on");
-
-    // Which part of which letter is under the pointer
-    const ch = e.target.closest ? e.target.closest(".ch") : null;
-    const parts = ch && ANATOMY[ch.textContent];
-    let name = "";
-    if (parts) {
-      const u = parseFloat(getComputedStyle(headline).fontSize) / 1000;
-      const r = ch.getBoundingClientRect();
-      const px = (e.clientX - r.left) / u;
-      const py = (r.bottom - DESCENT * u - e.clientY) / u;
-      let bestD = Infinity;
-      parts.forEach((p) => {
-        const d = Math.hypot(px - p[1], py - p[2]) / p[3];
-        if (d < bestD) { bestD = d; name = p[0]; }
-      });
-    }
-
-    label.textContent = name;
-    label.setAttribute("x", x);
-    label.setAttribute("y", y - RING - GAP);
-    if (name) {                                  // keep the name inside the headline
-      const b = label.getBBox();
-      if (b.x < 0) label.setAttribute("x", x - b.x);
-      else if (b.x + b.width > box.width) label.setAttribute("x", x - (b.x + b.width - box.width));
-    }
+    setName(partAt(e));
+    name.classList.toggle("is-on", !!name.textContent);
   }
 
   headline.addEventListener("pointermove", (e) => { if (e.pointerType === "mouse") show(e); });

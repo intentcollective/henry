@@ -275,17 +275,19 @@ main,
   stroke-width: 1.5;
 }
 
-.anatomy .label {
-  font-family: var(--font);
-  font-size: var(--fs-label);
+.anatomy-name {
+  position: absolute;
+  right: 0;
+  line-height: 1;
   font-weight: 500;
-  letter-spacing: 0;
-  fill: var(--mark);
-  stroke: var(--bg);           /* a thin black halo keeps the name */
-  stroke-width: 4px;           /* readable where it crosses a letter */
-  stroke-linejoin: round;
-  paint-order: stroke;
+  letter-spacing: -0.02em;
+  color: var(--mark);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
 }
+
+.anatomy-name.is-on { opacity: 1; }
 
 /* ============================================
    5. Grid of work
