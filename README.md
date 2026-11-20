@@ -20,6 +20,8 @@ only thing you edit to publish new work.
 │   ├── logo/               (optional, for a future logo/favicon)
 │   └── works/               ← all thumbnail + main images go here
 ├── apps-script/Code.gs      ← paste into the Sheet's Apps Script editor
+├── graphicdesigndiscourse/  ← the book's older site, separate from the portfolio
+├── .nojekyll                ← keeps GitHub Pages serving its _img and _js folders
 └── CNAME.example            ← rename to CNAME once you have a domain
 ```
 
