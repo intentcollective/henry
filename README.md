@@ -70,6 +70,13 @@ only thing you edit to publish new work.
        `#autoplay` after the name (`video:piece.mp4#autoplay`) for silent
        motion pieces that should start on their own, muted and looping
 
+     Every image and video file in the popup is shown whole and centered:
+     as wide as the popup (900px), but never taller than the screen, so a
+     portrait poster fits on screen and a landscape image fills the width.
+     For a long diagram whose small type needs the full width, add
+     `#full` after the name (`image:workflow.png#full`). It then fills the
+     width and scrolls. YouTube and Vimeo videos always fill the width.
+
      Example, one image followed by a video:
      ```
      image:project1-a.jpg,video:https://youtube.com/watch?v=xxxx

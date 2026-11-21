@@ -398,10 +398,31 @@ main {
 
 .modal-close:hover { opacity: 0.6; }
 
-.modal-content img {
+/* Popup media are shown whole and centered (see fitToScreen in app.js).
+   --fit-h is the screen height minus the space above the work (the
+   popup's padding and the close bar) and the same margin below it. */
+.modal {
+  --fit-h: max(240px, calc(100vh - 2 * var(--margin) - 60px));
+}
+@supports (height: 100svh) {
+  .modal { --fit-h: max(240px, calc(100svh - 2 * var(--margin) - 60px)); }
+}
+
+.carousel-slide {
+  display: flex;
+  justify-content: center;
+}
+
+.modal-content img,
+.modal-content .carousel-slide video {
   width: 100%;
+  height: auto;
   display: block;
   margin-bottom: var(--s4);
+}
+
+.modal-content .carousel-slide .is-fit {
+  width: min(100%, calc(var(--fit-h) * var(--ratio)));
 }
 
 .modal-content .video-embed {

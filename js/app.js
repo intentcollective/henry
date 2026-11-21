@@ -415,6 +415,7 @@ function renderSlide() {
       video.preload = "metadata";
       // Silent motion pieces start on their own and loop, muted.
       // Mark them with "#autoplay" after the file name in MainContent.
+      video.src = video.src.replace(/#full$/i, "");
       if (/#autoplay$/i.test(slide.value)) {
         video.src = video.src.replace(/#autoplay$/i, "");
         video.muted = true;
@@ -422,8 +423,7 @@ function renderSlide() {
         video.autoplay = !reduceMotion.matches;
         video.setAttribute("muted", "");
       }
-      video.style.maxWidth = "100%";
-      video.style.maxHeight = "75vh";
+      fitToScreen(video, slide.value);
       holder.appendChild(video);
     } else {
       // YouTube / Vimeo embed
@@ -442,9 +442,32 @@ function renderSlide() {
     }
   } else {
     const img = document.createElement("img");
-    img.src = IMAGES_PATH + slide.value;
+    img.src = IMAGES_PATH + slide.value.replace(/#full$/i, "");
     img.alt = carouselAlt;
+    fitToScreen(img, slide.value);
     holder.appendChild(img);
+  }
+}
+
+/* Every image and video file in the popup is shown whole: as wide as
+   the popup allows, but never taller than the screen, and centered.
+   Its proportion is read once it loads, so small files still scale
+   up to fill the space. A file marked "#full" in MainContent keeps
+   the full popup width and scrolls instead, for long diagrams whose
+   detail would get too small. */
+function fitToScreen(el, value) {
+  if (/#full$/i.test(value)) return;
+  const apply = (w, h) => {
+    if (!w || !h) return;
+    el.style.setProperty("--ratio", w / h);
+    el.classList.add("is-fit");
+  };
+  if (el.tagName === "VIDEO") {
+    el.addEventListener("loadedmetadata", () => apply(el.videoWidth, el.videoHeight), { once: true });
+  } else if (el.complete && el.naturalWidth) {
+    apply(el.naturalWidth, el.naturalHeight);
+  } else {
+    el.addEventListener("load", () => apply(el.naturalWidth, el.naturalHeight), { once: true });
   }
 }
 
