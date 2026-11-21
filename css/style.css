@@ -371,31 +371,39 @@ main {
 
 .modal[hidden] { display: none; }
 
-/* The work sits in a 900px column. On wider screens the column has a
-   gutter on each side where the slide arrows sit, outside the work. */
 .modal-content {
-  --gutter-x: var(--s8);
-  max-width: calc(900px + 2 * var(--gutter-x));
+  max-width: 900px;
   margin: 0 auto;
-  padding: 0 var(--gutter-x);
 }
 
-/* The close mark sits on a bar right above the main image,
-   aligned to its right edge, and stays in view while the
-   project scrolls. It never covers the work or video controls. */
+/* The bar right above the work holds the slide navigation at its
+   center and the close mark at its right edge. It stays in view while
+   the project scrolls and never covers the work or video controls. */
 .modal-bar {
   position: sticky;
   top: 0;
   z-index: 6;
-  display: flex;
-  justify-content: flex-end;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
   padding-top: var(--s4);
   background: rgba(0, 0, 0, 0.96);
 }
 
+.modal-nav {
+  grid-column: 2;
+  display: flex;
+  align-items: center;
+}
+
+.modal-bar .modal-close {
+  grid-column: 3;
+  justify-self: end;
+}
+
 /* The close mark and the two slide arrows are one family: drawn
    shapes in the text color, 14px, with a 44px target and the same
-   fade on hover. The close mark lines up with the column's right edge. */
+   fade on hover. The close mark lines up with the work column's right edge. */
 .modal-close,
 .modal-arrow {
   display: flex;
@@ -472,42 +480,15 @@ main {
 
 .carousel-wrap { position: relative; }
 
-/* The arrows sit just outside the current work, centered on its
-   height (app.js measures the work into --media-left, --media-right
-   and --media-mid). The 44px target puts each triangle 16px from the
-   work's edge. */
-.modal-arrow {
-  position: absolute;
-  top: var(--media-mid, 50%);
-  transform: translateY(-50%);
-  z-index: 5;
-}
-.modal-arrow-prev { left: calc(var(--media-left, 0px) - 43px); }
-.modal-arrow-next { left: calc(var(--media-right, 100%) - 1px); }
-
-/* "3 / 11", centered under the work. */
+/* "3 / 11", between the arrows. */
 .carousel-count {
   margin: 0;
+  min-width: 4.5em;
   text-align: center;
   font-size: var(--fs-label);
-  line-height: 1.4;
+  line-height: 44px;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
-}
-
-/* Phones have no room beside the work, so the arrows sit in the
-   count's row under it, lined up with the work's edges. Swiping
-   still works too. */
-@media (max-width: 640px) {
-  .modal-content { --gutter-x: 0px; }
-  .carousel-count { line-height: 44px; }
-  .modal-arrow {
-    top: auto;
-    bottom: 0;
-    transform: none;
-  }
-  .modal-arrow-prev { left: -15px; }
-  .modal-arrow-next { left: auto; right: -15px; }
 }
 
 .modal-title {

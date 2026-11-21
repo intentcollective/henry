@@ -350,16 +350,7 @@ function openModal(item) {
 
   renderSlide();
 
-  if (carouselSlides.length > 1) {
-    carouselWrap.classList.add("has-arrows");
-    const count = document.createElement("p");
-    count.className = "carousel-count";
-    count.id = "carousel-count";
-    count.setAttribute("aria-live", "polite");
-    carouselWrap.appendChild(count);
-    buildCarouselArrows(carouselWrap);
-    updateCount();
-  }
+  buildCarouselNav();
 
   const title = document.createElement("p");
   title.className = "modal-title";
@@ -395,6 +386,7 @@ function hideModal() {
   if (modal.hidden) return;
   modal.hidden = true;
   document.getElementById("modal-content").innerHTML = "";
+  document.getElementById("modal-nav").innerHTML = "";
   carouselSlides = [];
   document.body.style.overflow = "";
 }
@@ -420,7 +412,6 @@ function renderSlide() {
     if (token !== slideToken || !holder.isConnected) return;
     fitToScreen(el, slide.value);
     holder.replaceChildren(el);
-    watchSlide(el);
     preloadNeighbors();
   });
 }
@@ -504,39 +495,13 @@ function preloadNeighbors() {
 }
 
 /* The slide count, for example "3 / 11", tells people there is more to
-   see, which matters most on phones where swiping is invisible. */
+   see, which matters most on phones where swiping is invisible. It
+   changes on the click, even if the next work takes a moment to load. */
 function updateCount() {
   const count = document.getElementById("carousel-count");
   if (count) count.textContent = `${carouselIndex + 1} / ${carouselSlides.length}`;
 }
 
-/* The arrows sit just outside the current work, centered on its height,
-   so they follow each slide's own edges. The work's position is measured
-   whenever its size changes (an image loading, the window resizing). */
-let slideObserver = null;
-
-function watchSlide(media) {
-  if (slideObserver) slideObserver.disconnect();
-  if (!media) return;
-  placeArrows();
-  if ("ResizeObserver" in window) {
-    slideObserver = new ResizeObserver(placeArrows);
-    slideObserver.observe(media);
-  }
-}
-
-function placeArrows() {
-  const wrap = document.querySelector(".carousel-wrap.has-arrows");
-  const media = wrap && wrap.querySelector("#carousel-slide > *");
-  if (!media) return;
-  const w = wrap.getBoundingClientRect();
-  const m = media.getBoundingClientRect();
-  wrap.style.setProperty("--media-left", `${m.left - w.left}px`);
-  wrap.style.setProperty("--media-right", `${m.right - w.left}px`);
-  wrap.style.setProperty("--media-mid", `${m.top - w.top + m.height / 2}px`);
-}
-
-window.addEventListener("resize", placeArrows);
 
 /* Web addresses in a description become links. They are written as
    plain text in the Sheet, with or without https:// (for example
@@ -578,23 +543,37 @@ function fitToScreen(el, value) {
   el.classList.add("is-fit");
 }
 
-function buildCarouselArrows(wrap) {
+/* Navigation is one row at the top center of the popup, in the bar
+   with the close mark: ◀ 3 / 11 ▶. The work always starts at the same
+   line under it, so the row never moves, whatever the shape of the
+   slide, and it reads the same on phones and desktop. It is empty
+   when a project has a single slide. */
+function buildCarouselNav() {
+  const nav = document.getElementById("modal-nav");
+  nav.innerHTML = "";
+  if (carouselSlides.length < 2) return;
+
   const prev = document.createElement("button");
   prev.type = "button";
-  prev.className = "modal-arrow modal-arrow-prev";
+  prev.className = "modal-arrow";
   prev.setAttribute("aria-label", "Previous");
   prev.innerHTML = '<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2 7 12 1v12z"/></svg>';
   prev.addEventListener("click", showPrevSlide);
 
+  const count = document.createElement("p");
+  count.className = "carousel-count";
+  count.id = "carousel-count";
+  count.setAttribute("aria-live", "polite");
+
   const next = document.createElement("button");
   next.type = "button";
-  next.className = "modal-arrow modal-arrow-next";
+  next.className = "modal-arrow";
   next.setAttribute("aria-label", "Next");
   next.innerHTML = '<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M12 7 2 1v12z"/></svg>';
   next.addEventListener("click", showNextSlide);
 
-  wrap.appendChild(prev);
-  wrap.appendChild(next);
+  nav.append(prev, count, next);
+  updateCount();
 }
 
 function showPrevSlide() {
