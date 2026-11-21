@@ -412,6 +412,7 @@ function renderSlide() {
     if (token !== slideToken || !holder.isConnected) return;
     fitToScreen(el, slide.value);
     holder.replaceChildren(el);
+    if (el.tagName === "IMG") makeSteppable(el);
     preloadNeighbors();
   });
 }
@@ -574,6 +575,42 @@ function buildCarouselNav() {
 
   nav.append(prev, count, next);
   updateCount();
+}
+
+/* With a mouse, the image itself steps through the slides: its left
+   half goes back and its right half goes forward, and the cursor turns
+   into the matching triangle. Videos keep their own controls, and
+   touch screens keep swiping, so this only applies to images under a
+   fine pointer. */
+const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)");
+let stepSide = null;
+
+function makeSteppable(img) {
+  if (carouselSlides.length < 2) return;
+  const isLeft = (e) => {
+    const r = img.getBoundingClientRect();
+    return e.clientX - r.left < r.width / 2;
+  };
+  const show = (side) => {
+    img.classList.toggle("step-prev", side === "prev");
+    img.classList.toggle("step-next", side === "next");
+  };
+  img.classList.add("is-steppable");
+  // The next image arrives under a pointer that hasn't moved, so it
+  // starts with the cursor the last click used.
+  show(stepSide);
+  img.addEventListener("mousemove", (e) => {
+    stepSide = isLeft(e) ? "prev" : "next";
+    show(stepSide);
+  });
+  img.addEventListener("mouseleave", () => {
+    stepSide = null;
+  });
+  img.addEventListener("click", (e) => {
+    if (!finePointer.matches) return;
+    if (isLeft(e)) showPrevSlide();
+    else showNextSlide();
+  });
 }
 
 function showPrevSlide() {
