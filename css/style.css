@@ -330,6 +330,26 @@ main {
   background: #111;
 }
 
+.work-media {
+  position: relative;
+}
+
+.work-loop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+
+.work-media.is-playing .work-loop {
+  opacity: 1;
+}
+
 .work-title {
   margin: var(--s3) 0 0;
   font-size: var(--fs-body);

@@ -8,7 +8,7 @@ const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbzO56PZ7HjJ5atTfn
 const IMAGES_PATH = "images/works/";
 
 // File extensions treated as playable local/hosted video files
-const VIDEO_FILE_REGEX = /\.(mp4|webm|mov|m4v)(\?.*)?$/i;
+const VIDEO_FILE_REGEX = /\.(mp4|webm|mov|m4v)(\?[^#]*)?(#.*)?$/i;
 
 /* ============================================
    State
@@ -72,22 +72,113 @@ function render() {
     card.className = "work-card";
     card.setAttribute("aria-label", `Open ${item.Title || "work"}`);
 
+    // ThumbnailPath: "image.jpg" or "image.jpg, loop.mp4". A second,
+    // video entry becomes a silent loop over the still image.
+    const thumbFiles = (item.ThumbnailPath || "")
+      .split(",")
+      .map((f) => f.trim())
+      .filter(Boolean);
+    const stillFile = thumbFiles.find((f) => !VIDEO_FILE_REGEX.test(f)) || "";
+    const loopFile = thumbFiles.find((f) => VIDEO_FILE_REGEX.test(f));
+
+    const media = document.createElement("div");
+    media.className = "work-media";
+
     const thumb = document.createElement("img");
     thumb.className = "work-thumb";
     thumb.loading = "lazy";
     thumb.alt = item.Title || "";
-    thumb.src = item.ThumbnailPath ? IMAGES_PATH + item.ThumbnailPath.trim() : "";
+    thumb.src = stillFile ? IMAGES_PATH + stillFile : "";
+    media.appendChild(thumb);
+
+    if (loopFile) attachLoop(card, media, IMAGES_PATH + loopFile);
 
     const title = document.createElement("p");
     title.className = "work-title";
     title.textContent = item.Title || "Untitled";
 
-    card.appendChild(thumb);
+    card.appendChild(media);
     card.appendChild(title);
 
     card.addEventListener("click", () => openModal(item));
     grid.appendChild(card);
   });
+}
+
+/* ============================================
+   Card loops - a silent video over the still thumbnail
+   Pointer devices: plays on hover or keyboard focus.
+   Touch devices: plays while the card is mostly on screen.
+   Never plays with reduced motion or Save-Data. Loads only when needed.
+   ============================================ */
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+const canHover = window.matchMedia("(hover: hover) and (pointer: fine)");
+const saveData = !!(navigator.connection && navigator.connection.saveData);
+
+let loopObserver = null;
+function getLoopObserver() {
+  if (loopObserver || !("IntersectionObserver" in window)) return loopObserver;
+  loopObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        const ctl = entry.target._loop;
+        if (!ctl) return;
+        if (entry.intersectionRatio >= 0.6) ctl.play();
+        else ctl.stop();
+      });
+    },
+    { threshold: [0, 0.6] }
+  );
+  return loopObserver;
+}
+
+function attachLoop(card, media, src) {
+  if (saveData) return;
+  let video = null;
+
+  function ensureVideo() {
+    if (video) return video;
+    video = document.createElement("video");
+    video.className = "work-loop";
+    video.muted = true;
+    video.loop = true;
+    video.playsInline = true;
+    video.preload = "auto";
+    video.setAttribute("aria-hidden", "true");
+    video.setAttribute("muted", "");
+    video.setAttribute("playsinline", "");
+    video.src = src;
+    video.addEventListener("playing", () => media.classList.add("is-playing"));
+    media.appendChild(video);
+    return video;
+  }
+
+  const ctl = {
+    play() {
+      if (reduceMotion.matches) return;
+      const v = ensureVideo();
+      const p = v.play();
+      if (p && p.catch) p.catch(() => media.classList.remove("is-playing"));
+    },
+    stop() {
+      media.classList.remove("is-playing");
+      if (video) {
+        video.pause();
+        video.currentTime = 0;
+      }
+    },
+  };
+  card._loop = ctl;
+
+  if (canHover.matches) {
+    card.addEventListener("mouseenter", ctl.play);
+    card.addEventListener("mouseleave", ctl.stop);
+    card.addEventListener("focus", ctl.play);
+    card.addEventListener("blur", ctl.stop);
+  } else {
+    const obs = getLoopObserver();
+    if (obs) obs.observe(card);
+  }
 }
 
 /* ============================================
@@ -322,6 +413,15 @@ function renderSlide() {
       video.controls = true;
       video.playsInline = true;
       video.preload = "metadata";
+      // Silent motion pieces start on their own and loop, muted.
+      // Mark them with "#autoplay" after the file name in MainContent.
+      if (/#autoplay$/i.test(slide.value)) {
+        video.src = video.src.replace(/#autoplay$/i, "");
+        video.muted = true;
+        video.loop = true;
+        video.autoplay = !reduceMotion.matches;
+        video.setAttribute("muted", "");
+      }
       video.style.maxWidth = "100%";
       video.style.maxHeight = "75vh";
       holder.appendChild(video);

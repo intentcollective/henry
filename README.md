@@ -55,12 +55,20 @@ only thing you edit to publish new work.
    - **Description** — a short write-up
    - **ThumbnailPath** — just the filename, e.g. `project1-thumb.jpg`
      (the file itself goes in `images/works/` in the repo)
+     Optional: add a short silent loop after a comma, e.g.
+     `project1-thumb.jpg, project1-loop.mp4`. The loop plays on hover
+     with a mouse, and while the card is on screen on phones. It never
+     plays with reduced motion or Save-Data, and loads only when needed.
+     Keep loops to a few seconds and about 1 MB.
    - **MainContent** — one or more slides for the popup, comma-separated,
      each prefixed with its type so images and videos can be mixed
      freely in the same post:
      - `image:filename.jpg` — filename must match exactly what's in
        `images/works/` (case-sensitive, extension included)
      - `video:URL` — the full YouTube or Vimeo URL
+     - `video:filename.mp4` — a video file in `images/works/`. Add
+       `#autoplay` after the name (`video:piece.mp4#autoplay`) for silent
+       motion pieces that should start on their own, muted and looping
 
      Example, one image followed by a video:
      ```
