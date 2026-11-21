@@ -52,7 +52,9 @@ only thing you edit to publish new work.
 3. Add one row per piece of work, starting in row 2:
    - **Category** — `Design` or `Education`
    - **Title** — the work's title
-   - **Description** — a short write-up
+   - **Description** — a short write-up. Web addresses in it become
+     links on their own, with or without https://
+     (e.g. `Live piece at intentcollective.design/data`)
    - **ThumbnailPath** — just the filename, e.g. `project1-thumb.jpg`
      (the file itself goes in `images/works/` in the repo)
      Optional: add a short silent loop after a comma, e.g.

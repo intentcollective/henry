@@ -361,7 +361,7 @@ function openModal(item) {
 
   const desc = document.createElement("p");
   desc.className = "modal-description";
-  desc.textContent = item.Description || "";
+  linkify(desc, item.Description || "");
   content.appendChild(desc);
 
   modal.hidden = false;
@@ -455,6 +455,31 @@ function renderSlide() {
    up to fill the space. A file marked "#full" in MainContent keeps
    the full popup width and scrolls instead, for long diagrams whose
    detail would get too small. */
+/* Web addresses in a description become links. They are written as
+   plain text in the Sheet, with or without https:// (for example
+   "intentcollective.design/data"), and keep exactly that wording.
+   Text is added as text nodes, so nothing in the Sheet runs as HTML. */
+const LINK_REGEX = /(?<![@\w.\/])(?:https?:\/\/[^\s]+|(?:www\.)?[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:design|com|org|net|edu|io|co|art|studio)(?:\/[^\s]*)?)/gi;
+
+function linkify(el, text) {
+  let last = 0;
+  for (const match of text.matchAll(LINK_REGEX)) {
+    // Leave sentence punctuation after an address outside the link.
+    const label = match[0].replace(/[.,;:!?)\]"'”’]+$/, "");
+    const start = match.index;
+    el.append(text.slice(last, start));
+    const a = document.createElement("a");
+    a.href = /^https?:\/\//i.test(label) ? label : "https://" + label;
+    a.textContent = label;
+    a.target = "_blank";
+    a.rel = "noopener";
+    a.className = "text-link";
+    el.append(a);
+    last = start + label.length;
+  }
+  el.append(text.slice(last));
+}
+
 function fitToScreen(el, value) {
   if (/#full$/i.test(value)) return;
   const apply = (w, h) => {
