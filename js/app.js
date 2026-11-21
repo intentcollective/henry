@@ -407,55 +407,100 @@ function renderSlide() {
   const holder = document.getElementById("carousel-slide");
   if (!holder || carouselSlides.length === 0) return;
 
-  holder.innerHTML = "";
   const slide = carouselSlides[carouselIndex];
+  const token = ++slideToken;
   updateCount();
 
-  if (slide.type === "video") {
-    if (VIDEO_FILE_REGEX.test(slide.value)) {
-      // Video file: local (in images/works/) or a full URL to an mp4
-      const video = document.createElement("video");
-      video.src = /^https?:\/\//i.test(slide.value)
-        ? slide.value
-        : IMAGES_PATH + slide.value;
-      video.controls = true;
-      video.playsInline = true;
-      video.preload = "metadata";
-      // Silent motion pieces start on their own and loop, muted.
-      // Mark them with "#autoplay" after the file name in MainContent.
-      video.src = video.src.replace(/#full$/i, "");
-      if (/#autoplay$/i.test(slide.value)) {
-        video.src = video.src.replace(/#autoplay$/i, "");
-        video.muted = true;
-        video.loop = true;
-        video.autoplay = !reduceMotion.matches;
-        video.setAttribute("muted", "");
-      }
-      fitToScreen(video, slide.value);
-      holder.appendChild(video);
-    } else {
-      // YouTube / Vimeo embed
-      const embedSrc = parseVideoEmbed(slide.value);
-      const wrap = document.createElement("div");
-      wrap.className = "video-embed";
-      if (embedSrc) {
-        // No autoplay param -> loads with a click-to-play poster frame.
-        const iframe = document.createElement("iframe");
-        iframe.src = embedSrc;
-        iframe.allow = "autoplay; fullscreen; picture-in-picture";
-        iframe.allowFullscreen = true;
-        wrap.appendChild(iframe);
-      }
-      holder.appendChild(wrap);
+  const { el, ready } = buildSlide(slide);
+
+  // The current work stays on screen until the next one has loaded and
+  // has its size, then they swap in a single frame. A click that comes
+  // before then wins, and the slower slide is dropped.
+  ready.then(() => {
+    if (token !== slideToken || !holder.isConnected) return;
+    fitToScreen(el, slide.value);
+    holder.replaceChildren(el);
+    watchSlide(el);
+    preloadNeighbors();
+  });
+}
+
+let slideToken = 0;
+
+// Resolves when the element is ready to draw at its real size, or after
+// a few seconds so a slow or broken file never blocks the popup.
+function whenReady(promise) {
+  return Promise.race([
+    promise.catch(() => {}),
+    new Promise((resolve) => setTimeout(resolve, 4000)),
+  ]);
+}
+
+function buildSlide(slide) {
+  if (slide.type === "video" && VIDEO_FILE_REGEX.test(slide.value)) {
+    // Video file: local (in images/works/) or a full URL to an mp4
+    const video = document.createElement("video");
+    const autoplay = /#autoplay$/i.test(slide.value);
+    const file = slide.value.replace(/#(autoplay|full)$/i, "");
+    video.src = /^https?:\/\//i.test(file) ? file : IMAGES_PATH + file;
+    video.controls = true;
+    video.playsInline = true;
+    video.preload = "metadata";
+    // Silent motion pieces start on their own and loop, muted.
+    // Mark them with "#autoplay" after the file name in MainContent.
+    if (autoplay) {
+      video.muted = true;
+      video.loop = true;
+      video.autoplay = !reduceMotion.matches;
+      video.setAttribute("muted", "");
     }
-  } else {
-    const img = document.createElement("img");
-    img.src = IMAGES_PATH + slide.value.replace(/#full$/i, "");
-    img.alt = carouselAlt;
-    fitToScreen(img, slide.value);
-    holder.appendChild(img);
+    const ready = new Promise((resolve) => {
+      video.addEventListener("loadedmetadata", resolve, { once: true });
+      video.addEventListener("error", resolve, { once: true });
+    });
+    return { el: video, ready: whenReady(ready) };
   }
-  watchSlide(holder.firstElementChild);
+
+  if (slide.type === "video") {
+    // YouTube / Vimeo embed. Its box has a fixed shape, so it can swap in
+    // right away and the player draws itself inside.
+    const embedSrc = parseVideoEmbed(slide.value);
+    const wrap = document.createElement("div");
+    wrap.className = "video-embed";
+    if (embedSrc) {
+      // No autoplay param -> loads with a click-to-play poster frame.
+      const iframe = document.createElement("iframe");
+      iframe.src = embedSrc;
+      iframe.allow = "autoplay; fullscreen; picture-in-picture";
+      iframe.allowFullscreen = true;
+      wrap.appendChild(iframe);
+    }
+    return { el: wrap, ready: Promise.resolve() };
+  }
+
+  const img = document.createElement("img");
+  img.src = IMAGES_PATH + slide.value.replace(/#full$/i, "");
+  img.alt = carouselAlt;
+  return { el: img, ready: whenReady(img.decode()) };
+}
+
+// Loads the slides on either side in the background, so most clicks
+// swap at once. Only images are fetched ahead; videos stay on demand.
+const preloaded = new Map();
+
+function preloadNeighbors() {
+  const n = carouselSlides.length;
+  if (n < 2) return;
+  [carouselIndex + 1, carouselIndex - 1].forEach((i) => {
+    const slide = carouselSlides[(i + n) % n];
+    if (slide.type !== "image") return;
+    const src = IMAGES_PATH + slide.value.replace(/#full$/i, "");
+    if (preloaded.has(src)) return;
+    const img = new Image();
+    img.src = src;
+    img.decode().catch(() => {});
+    preloaded.set(src, img);
+  });
 }
 
 /* The slide count, for example "3 / 11", tells people there is more to
@@ -493,12 +538,6 @@ function placeArrows() {
 
 window.addEventListener("resize", placeArrows);
 
-/* Every image and video file in the popup is shown whole: as wide as
-   the popup allows, but never taller than the screen, and centered.
-   Its proportion is read once it loads, so small files still scale
-   up to fill the space. A file marked "#full" in MainContent keeps
-   the full popup width and scrolls instead, for long diagrams whose
-   detail would get too small. */
 /* Web addresses in a description become links. They are written as
    plain text in the Sheet, with or without https:// (for example
    "intentcollective.design/data"), and keep exactly that wording.
@@ -524,20 +563,19 @@ function linkify(el, text) {
   el.append(text.slice(last));
 }
 
+/* Every image and video file in the popup is shown whole: as wide as
+   the popup allows, but never taller than the screen, and centered.
+   Its proportion is read before it is shown, so it never appears at
+   the wrong size, and small files still scale up to fill the space. A file marked "#full" in MainContent keeps
+   the full popup width and scrolls instead, for long diagrams whose
+   detail would get too small. */
 function fitToScreen(el, value) {
   if (/#full$/i.test(value)) return;
-  const apply = (w, h) => {
-    if (!w || !h) return;
-    el.style.setProperty("--ratio", w / h);
-    el.classList.add("is-fit");
-  };
-  if (el.tagName === "VIDEO") {
-    el.addEventListener("loadedmetadata", () => apply(el.videoWidth, el.videoHeight), { once: true });
-  } else if (el.complete && el.naturalWidth) {
-    apply(el.naturalWidth, el.naturalHeight);
-  } else {
-    el.addEventListener("load", () => apply(el.naturalWidth, el.naturalHeight), { once: true });
-  }
+  const w = el.tagName === "VIDEO" ? el.videoWidth : el.naturalWidth;
+  const h = el.tagName === "VIDEO" ? el.videoHeight : el.naturalHeight;
+  if (!w || !h) return;
+  el.style.setProperty("--ratio", w / h);
+  el.classList.add("is-fit");
 }
 
 function buildCarouselArrows(wrap) {
