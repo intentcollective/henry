@@ -351,6 +351,7 @@ function openModal(item) {
   renderSlide();
 
   if (carouselSlides.length > 1) {
+    carouselWrap.classList.add("has-arrows");
     buildCarouselArrows(carouselWrap);
   }
 
@@ -501,14 +502,14 @@ function buildCarouselArrows(wrap) {
   prev.type = "button";
   prev.className = "modal-arrow modal-arrow-prev";
   prev.setAttribute("aria-label", "Previous");
-  prev.innerHTML = "&#8592;";
+  prev.innerHTML = '<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M2 7 12 1v12z"/></svg>';
   prev.addEventListener("click", showPrevSlide);
 
   const next = document.createElement("button");
   next.type = "button";
   next.className = "modal-arrow modal-arrow-next";
   next.setAttribute("aria-label", "Next");
-  next.innerHTML = "&#8594;";
+  next.innerHTML = '<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M12 7 2 1v12z"/></svg>';
   next.addEventListener("click", showNextSlide);
 
   wrap.appendChild(prev);

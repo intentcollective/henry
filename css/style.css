@@ -371,9 +371,13 @@ main {
 
 .modal[hidden] { display: none; }
 
+/* The work sits in a 900px column. On wider screens the column has a
+   gutter on each side where the slide arrows sit, outside the work. */
 .modal-content {
-  max-width: 900px;
+  --gutter-x: var(--s8);
+  max-width: calc(900px + 2 * var(--gutter-x));
   margin: 0 auto;
+  padding: 0 var(--gutter-x);
 }
 
 /* The close mark sits on a bar right above the main image,
@@ -389,14 +393,40 @@ main {
   background: rgba(0, 0, 0, 0.96);
 }
 
-.modal-close {
-  font-size: 2rem;
-  line-height: 1;
-  padding: var(--s1) 0 var(--s2) var(--s3);
+/* The close mark and the two slide arrows are one family: drawn
+   shapes in the text color, 14px, with a 44px target and the same
+   fade on hover. The close mark lines up with the column's right edge. */
+.modal-close,
+.modal-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  color: var(--fg);
   transition: opacity 0.15s ease;
 }
 
-.modal-close:hover { opacity: 0.6; }
+.modal-close svg,
+.modal-arrow svg {
+  width: 14px;
+  height: 14px;
+  display: block;
+}
+
+.modal-close svg path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3;
+}
+
+.modal-arrow svg path { fill: currentColor; }
+
+.modal-close { margin-right: -15px; }
+
+.modal-close:hover,
+.modal-arrow:hover { opacity: 0.6; }
 
 /* Popup media are shown whole and centered (see fitToScreen in app.js).
    --fit-h is the screen height minus the space above the work (the
@@ -442,21 +472,31 @@ main {
 
 .carousel-wrap { position: relative; }
 
+/* Arrows sit in the gutters, outside the work, at the middle of the
+   screen-height area, so they stay put as you step through slides of
+   different shapes. */
 .modal-arrow {
   position: absolute;
-  top: 50%;
+  top: min(50%, calc(var(--fit-h) / 2));
   transform: translateY(-50%);
-  font-size: 1.75rem;
-  line-height: 1;
   z-index: 5;
-  padding: var(--s2) var(--s3);
-  background: rgba(0, 0, 0, 0.5);
-  transition: opacity 0.15s ease;
 }
+.modal-arrow-prev { left: calc(-44px - var(--s2)); }
+.modal-arrow-next { right: calc(-44px - var(--s2)); }
 
-.modal-arrow:hover { opacity: 0.6; }
-.modal-arrow-prev { left: var(--s2); }
-.modal-arrow-next { right: var(--s2); }
+/* Phones have no room beside the work, so the arrows sit in a row
+   under it, lined up with its edges. Swiping still works too. */
+@media (max-width: 640px) {
+  .modal-content { --gutter-x: 0px; }
+  .carousel-wrap.has-arrows { padding-bottom: 44px; }
+  .modal-arrow {
+    top: auto;
+    bottom: 0;
+    transform: none;
+  }
+  .modal-arrow-prev { left: -15px; }
+  .modal-arrow-next { right: -15px; }
+}
 
 .modal-title {
   font-size: var(--fs-title);
