@@ -472,30 +472,42 @@ main {
 
 .carousel-wrap { position: relative; }
 
-/* Arrows sit in the gutters, outside the work, at the middle of the
-   screen-height area, so they stay put as you step through slides of
-   different shapes. */
+/* The arrows sit just outside the current work, centered on its
+   height (app.js measures the work into --media-left, --media-right
+   and --media-mid). The 44px target puts each triangle 16px from the
+   work's edge. */
 .modal-arrow {
   position: absolute;
-  top: min(50%, calc(var(--fit-h) / 2));
+  top: var(--media-mid, 50%);
   transform: translateY(-50%);
   z-index: 5;
 }
-.modal-arrow-prev { left: calc(-44px - var(--s2)); }
-.modal-arrow-next { right: calc(-44px - var(--s2)); }
+.modal-arrow-prev { left: calc(var(--media-left, 0px) - 43px); }
+.modal-arrow-next { left: calc(var(--media-right, 100%) - 1px); }
 
-/* Phones have no room beside the work, so the arrows sit in a row
-   under it, lined up with its edges. Swiping still works too. */
+/* "3 / 11", centered under the work. */
+.carousel-count {
+  margin: 0;
+  text-align: center;
+  font-size: var(--fs-label);
+  line-height: 1.4;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Phones have no room beside the work, so the arrows sit in the
+   count's row under it, lined up with the work's edges. Swiping
+   still works too. */
 @media (max-width: 640px) {
   .modal-content { --gutter-x: 0px; }
-  .carousel-wrap.has-arrows { padding-bottom: 44px; }
+  .carousel-count { line-height: 44px; }
   .modal-arrow {
     top: auto;
     bottom: 0;
     transform: none;
   }
   .modal-arrow-prev { left: -15px; }
-  .modal-arrow-next { right: -15px; }
+  .modal-arrow-next { left: auto; right: -15px; }
 }
 
 .modal-title {

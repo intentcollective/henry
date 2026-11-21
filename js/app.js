@@ -352,7 +352,13 @@ function openModal(item) {
 
   if (carouselSlides.length > 1) {
     carouselWrap.classList.add("has-arrows");
+    const count = document.createElement("p");
+    count.className = "carousel-count";
+    count.id = "carousel-count";
+    count.setAttribute("aria-live", "polite");
+    carouselWrap.appendChild(count);
     buildCarouselArrows(carouselWrap);
+    updateCount();
   }
 
   const title = document.createElement("p");
@@ -403,6 +409,7 @@ function renderSlide() {
 
   holder.innerHTML = "";
   const slide = carouselSlides[carouselIndex];
+  updateCount();
 
   if (slide.type === "video") {
     if (VIDEO_FILE_REGEX.test(slide.value)) {
@@ -448,7 +455,43 @@ function renderSlide() {
     fitToScreen(img, slide.value);
     holder.appendChild(img);
   }
+  watchSlide(holder.firstElementChild);
 }
+
+/* The slide count, for example "3 / 11", tells people there is more to
+   see, which matters most on phones where swiping is invisible. */
+function updateCount() {
+  const count = document.getElementById("carousel-count");
+  if (count) count.textContent = `${carouselIndex + 1} / ${carouselSlides.length}`;
+}
+
+/* The arrows sit just outside the current work, centered on its height,
+   so they follow each slide's own edges. The work's position is measured
+   whenever its size changes (an image loading, the window resizing). */
+let slideObserver = null;
+
+function watchSlide(media) {
+  if (slideObserver) slideObserver.disconnect();
+  if (!media) return;
+  placeArrows();
+  if ("ResizeObserver" in window) {
+    slideObserver = new ResizeObserver(placeArrows);
+    slideObserver.observe(media);
+  }
+}
+
+function placeArrows() {
+  const wrap = document.querySelector(".carousel-wrap.has-arrows");
+  const media = wrap && wrap.querySelector("#carousel-slide > *");
+  if (!media) return;
+  const w = wrap.getBoundingClientRect();
+  const m = media.getBoundingClientRect();
+  wrap.style.setProperty("--media-left", `${m.left - w.left}px`);
+  wrap.style.setProperty("--media-right", `${m.right - w.left}px`);
+  wrap.style.setProperty("--media-mid", `${m.top - w.top + m.height / 2}px`);
+}
+
+window.addEventListener("resize", placeArrows);
 
 /* Every image and video file in the popup is shown whole: as wide as
    the popup allows, but never taller than the screen, and centered.
